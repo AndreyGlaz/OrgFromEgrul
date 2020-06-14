@@ -4,5 +4,5 @@ from .celery import app
 
 @app.task
 def debug_task():
-    # parsing_egrul()
+    parsing_egrul()
     print('all okey')

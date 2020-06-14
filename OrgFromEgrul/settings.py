@@ -78,7 +78,7 @@ DATABASES = {
         'NAME': 'org_egrul',
         'USER': 'orgadmin',
         'PASSWORD': '1234567892q',
-        'HOST': '127.0.0.1',
+        'HOST': '192.168.1.45',
         'PORT': '5432',
     }
 }

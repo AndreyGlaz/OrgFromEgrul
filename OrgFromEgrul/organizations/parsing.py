@@ -88,6 +88,13 @@ def name_subdivision_validation(element, wrapt_subdivision, name_main_organizati
 #     else:
 #         return None
 
+# Функция для проверки на количество символов в выгрузке (может попадаться 2. Например "49".
+def okopf_validate(value):
+    if value and len(value.replace(' ', '')) == 5:
+        return value
+    else:
+        return ''
+
 
 # Создаёт или обновляет запись в организациях
 def save_in_base(wrapt_org):
@@ -124,7 +131,7 @@ def file_parser(file_xml):
         wrapt_organization['house'] = re.sub(r'[^0-9]', '',
                                              item_validation(child, './СвАдресЮЛ//АдресРФ', 'Дом')
                                              )  # отавляет в строке только цыфры
-        # wrapt_organization['okopf'] = finding_from_dict(wrapt_organization['okopf'], Okopf)
+        wrapt_organization['okopf'] = okopf_validate(wrapt_organization['okopf'])
 
         save_in_base(wrapt_organization)
         # array_of_organizations.append(wrapt_organization)
@@ -156,3 +163,4 @@ def parsing_egrul():
     file_zip = zipfile.ZipFile('new_folder.zip', 'r')
     for file_name in file_zip.namelist():
         file_parser(file_zip.read(file_name).decode('utf-8'))
+    print('Success!')

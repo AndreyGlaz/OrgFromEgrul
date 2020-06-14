@@ -1,0 +1,6 @@
+# This files will don't entry in docker container
+celerybeat*
+Dockerfile
+.idea
+celery.log
+celeryd.pid
