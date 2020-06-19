@@ -1,8 +1,8 @@
-from OrgFromEgrul.organizations.parsing import parsing_egrul
+from OrgFromEgrul.organizations.getting_data import select_folder_update
 from .celery import app
 
 
 @app.task
 def debug_task():
-    parsing_egrul()
+    select_folder_update()
     print('all okey')

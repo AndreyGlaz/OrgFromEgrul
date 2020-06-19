@@ -97,9 +97,15 @@ def okopf_validate(value):
 
 
 # Создаёт или обновляет запись в организациях
-def save_in_base(wrapt_org):
-    is_org_exist = OrganizationEgrul.objects.filter(ogrn=wrapt_org['ogrn']).exists()
-    if is_org_exist:
+def save_in_base(wrapt_org, kpp_subdivision=''):
+    if OrganizationEgrul.objects.filter(ogrn=wrapt_org['ogrn']).exists():
+        if wrapt_org['main_company']:  # Проверка: филиал или главная компания
+            if OrganizationEgrul.objects.filter(ogrn=wrapt_org['ogrn'],
+                                                kpp=kpp_subdivision).exists():  # Проверка на наличие такого филиала
+                existing_sub = OrganizationEgrul.objects.get(ogrn=wrapt_org['ogrn'], kpp=kpp_subdivision)
+                serializer = OrganizationEgrulCreateOrUpdateSerializer(existing_sub, data=wrapt_org)
+            else:
+                serializer = OrganizationEgrulCreateOrUpdateSerializer(data=wrapt_org)
         existing_org = OrganizationEgrul.objects.get(ogrn=wrapt_org['ogrn'])
         serializer = OrganizationEgrulCreateOrUpdateSerializer(existing_org, data=wrapt_org)
     else:
@@ -132,7 +138,7 @@ def file_parser(file_xml):
                                              item_validation(child, './СвАдресЮЛ//АдресРФ', 'Дом')
                                              )  # отавляет в строке только цыфры
         wrapt_organization['okopf'] = okopf_validate(wrapt_organization['okopf'])
-
+        wrapt_organization['main_company'] = None
         save_in_base(wrapt_organization)
         # array_of_organizations.append(wrapt_organization)
 
@@ -146,6 +152,8 @@ def file_parser(file_xml):
                 wrapt_subdivision['inn'] = wrapt_organization[
                     'inn']  # ИНН у филиала/представительства такой же как и у основной организации
                 wrapt_subdivision['kpp'] = kpp_for_subdivision(subdivision)
+                wrapt_subdivision['ogrn'] = wrapt_organization[
+                    'ogrn']  # ОГРН у филиала/представительства такой же как и у основной организации
                 wrapt_subdivision['locality'] = location_validation(
                     subdivision.find('АдрМНРФ'))  # правильно находит название города
                 wrapt_subdivision['house'] = re.sub(r'[^0-9]', '', item_validation(subdivision, 'АдрМНРФ',
@@ -153,14 +161,14 @@ def file_parser(file_xml):
                 # только цыфры
                 wrapt_subdivision['name'] = name_subdivision_validation(subdivision, wrapt_subdivision,
                                                                         wrapt_organization['name'])
+                wrapt_subdivision['main_company'] = OrganizationEgrul.objects.get(
+                    ogrn=wrapt_organization['ogrn']).pk  # Ссылка на главную компанию
 
                 save_in_base(wrapt_subdivision)
                 # array_of_organizations.append(wrapt_subdivision)
 
-
-def parsing_egrul():
-    # list_of_all_organization_ogrn = OrganizationEgrul.objects.values_list('ogrn', flat=True)
-    file_zip = zipfile.ZipFile('new_folder.zip', 'r')
-    for file_name in file_zip.namelist():
-        file_parser(file_zip.read(file_name).decode('utf-8'))
-    print('Success!')
+# def parsing_egrul(file_zip):
+#     # list_of_all_organization_ogrn = OrganizationEgrul.objects.values_list('ogrn', flat=True)
+#     for file_name in file_zip.namelist():
+#         file_parser(file_zip.read(file_name).decode('utf-8'))
+#     print('Success!')

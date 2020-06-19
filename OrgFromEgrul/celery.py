@@ -12,13 +12,13 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OrgFromEgrul.settings')
 app = Celery('OrgFromEgrul')
 
 app.conf.update(
-    broker_url='redis://192.168.99.100:6379/0',
+    broker_url='redis://127.0.0.1:6379/0',
     timezone='Europe/Moscow',
     beat_schedule={
-        'add-every-30-seconds': {
+        'update_data': {
             'task': 'OrgFromEgrul.tasks.debug_task',
             # 'schedule': 100.0,
-            'schedule': crontab(minute=6, hour=16),
+            'schedule': crontab(minute=57, hour=14),
         }
     }
 )
