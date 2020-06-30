@@ -1,19 +1,16 @@
-from OrgFromEgrul.organizations.parsing import file_parser
-
 import os
+import requests
+from OrgFromEgrul.organizations.parsing import file_parser
 from datetime import date, timedelta
 import zipfile
+import tempfile
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 parent_dir = os.path.dirname(os.path.abspath(os.curdir))
-egrul_dir = os.path.join(parent_dir, 'OrgFromEgrul', 'EGRUL')
-list_dir_egrul = os.listdir(egrul_dir)
-
-
-def start_getting_data():
-    # file_zip = zipfile.ZipFile('new_folder.zip', 'r')
-    # parsing_egrul(file_zip)
-    # Список директорий на FTP-сервере ЕГРЮЛ (названия из дат)
-    select_folder()
+egrul_dir = 'https://ftp.egrul.nalog.ru/EGRUL/'
+cert_dir = os.path.join(parent_dir, 'OrgFromEgrul', 'cert-key.pem')
 
 
 # Добавляет ноль в начало значнеия
@@ -25,8 +22,10 @@ def zero_plus(value):
 
 
 # Открытие Zip архива и передача в парсинг
-def open_zip(zip_path):
-    file_zip = zipfile.ZipFile(zip_path, 'r')
+def open_zip(data_zip):
+    file = tempfile.TemporaryFile()
+    file.write(data_zip)
+    file_zip = zipfile.ZipFile(file)
     print(file_zip)
     for file_name in file_zip.namelist():
         print(file_name, file_zip.getinfo(file_name))
@@ -34,28 +33,31 @@ def open_zip(zip_path):
 
 
 # Проверка содержимого папки и отправка на открытие
-def check_folder(folder_path):
-    if os.path.exists(folder_path):
-        list_zip = os.listdir(folder_path)
-        for name_zip in list_zip:
-            open_zip(os.path.join(folder_path, name_zip))
-    else:
-        print('Don`t exists folder ' + folder_path)
+def check_file(file_path):
+    file_count = 1
+    miss = 0
+    while miss < 3:
+        response_zip = requests.get(file_path + '_' + str(file_count) + '.zip', verify=False, cert=cert_dir)
+        if response_zip.headers['Content-Type'] == 'application/download':
+            open_zip(response_zip.content)
+        else:
+            miss += 1
+        file_count += 1
 
 
 # Формирование правильного названия папок из даты и проверка на наличие такой папки
 def forming_and_use_date(day, month, year):
     date_delimiter = '.'
+    date_file_delimiter = '-'
     temp_date_str = date_delimiter.join([zero_plus(day), zero_plus(month), str(year)])
-    if temp_date_str in list_dir_egrul:
-        check_folder(os.path.join(egrul_dir, temp_date_str))
+    temp_date_str_file = date_file_delimiter.join([str(year), zero_plus(month), zero_plus(day)])
+    check_file(''.join([egrul_dir, temp_date_str, '/EGRUL_', temp_date_str_file]))
 
 
 # Прохождение по списку дирректорий (загрузка всей базы)
 def select_folder():
-    date_delimiter = '.'
-    for number_year in range(2016, date.today().year + 1):
-        check_folder(os.path.join(egrul_dir, '01.01.' + str(number_year) + '_FULL'))
+    for number_year in range(2018, date.today().year + 1):
+        check_file(egrul_dir + '01.01.' + str(number_year) + '_FULL/EGRUL_FULL_' + str(number_year) + '-01-01')
         for number_month in range(1, 13):
             for number_date in range(1, 32):
                 forming_and_use_date(number_date, number_month, number_year)

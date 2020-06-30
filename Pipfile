@@ -12,6 +12,8 @@ celery = "*"
 redis = "*"
 pytz = "*"
 psycopg2-binary = "*"
+urllib3 = "*"
+requests = "*"
 
 [requires]
 python_version = "3.7"

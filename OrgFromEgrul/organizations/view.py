@@ -14,7 +14,7 @@ class OrganizationEgrulView(ListAPIView):
     def get_queryset(self):
         org_inn = self.request.query_params.get('inn')
         org_ogrn = self.request.query_params.get('ogrn')
-        list_obj = OrganizationEgrul.objects.filter(ogrn=org_ogrn)
+        list_obj = OrganizationEgrul.objects.filter(ogrn=org_ogrn, inn=org_inn)
         return list_obj
 
     #

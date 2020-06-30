@@ -99,15 +99,16 @@ def okopf_validate(value):
 # Создаёт или обновляет запись в организациях
 def save_in_base(wrapt_org, kpp_subdivision=''):
     if OrganizationEgrul.objects.filter(ogrn=wrapt_org['ogrn']).exists():
-        if wrapt_org['main_company']:  # Проверка: филиал или главная компания
+        if wrapt_org['main_company'] is not None:  # Проверка: филиал или главная компания
             if OrganizationEgrul.objects.filter(ogrn=wrapt_org['ogrn'],
                                                 kpp=kpp_subdivision).exists():  # Проверка на наличие такого филиала
                 existing_sub = OrganizationEgrul.objects.get(ogrn=wrapt_org['ogrn'], kpp=kpp_subdivision)
                 serializer = OrganizationEgrulCreateOrUpdateSerializer(existing_sub, data=wrapt_org)
             else:
                 serializer = OrganizationEgrulCreateOrUpdateSerializer(data=wrapt_org)
-        existing_org = OrganizationEgrul.objects.get(ogrn=wrapt_org['ogrn'])
-        serializer = OrganizationEgrulCreateOrUpdateSerializer(existing_org, data=wrapt_org)
+        else:
+            existing_org = OrganizationEgrul.objects.get(ogrn=wrapt_org['ogrn'], main_company=None)
+            serializer = OrganizationEgrulCreateOrUpdateSerializer(existing_org, data=wrapt_org)
     else:
         serializer = OrganizationEgrulCreateOrUpdateSerializer(data=wrapt_org)
     is_valid = serializer.is_valid()
@@ -162,10 +163,9 @@ def file_parser(file_xml):
                 wrapt_subdivision['name'] = name_subdivision_validation(subdivision, wrapt_subdivision,
                                                                         wrapt_organization['name'])
                 wrapt_subdivision['main_company'] = OrganizationEgrul.objects.get(
-                    ogrn=wrapt_organization['ogrn']).pk  # Ссылка на главную компанию
-
-                save_in_base(wrapt_subdivision)
-                # array_of_organizations.append(wrapt_subdivision)
+                    ogrn=wrapt_organization['ogrn'], main_company=None).pk  # Ссылка на главную компанию
+                save_in_base(wrapt_subdivision, wrapt_subdivision['kpp'])
+            # array_of_organizations.append(wrapt_subdivision)
 
 # def parsing_egrul(file_zip):
 #     # list_of_all_organization_ogrn = OrganizationEgrul.objects.values_list('ogrn', flat=True)
