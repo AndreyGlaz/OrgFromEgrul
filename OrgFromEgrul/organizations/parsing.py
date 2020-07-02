@@ -1,7 +1,9 @@
 import xml.etree.ElementTree as ET
 import re
-import zipfile
 
+from django.core.exceptions import ObjectDoesNotExist
+
+from OrgFromEgrul.organizations.getting_data import log_in_file
 from OrgFromEgrul.organizations.models import OrganizationEgrul
 from OrgFromEgrul.organizations.serializers import OrganizationEgrulCreateOrUpdateSerializer
 
@@ -162,8 +164,13 @@ def file_parser(file_xml):
                 # только цыфры
                 wrapt_subdivision['name'] = name_subdivision_validation(subdivision, wrapt_subdivision,
                                                                         wrapt_organization['name'])
-                wrapt_subdivision['main_company'] = OrganizationEgrul.objects.get(
-                    ogrn=wrapt_organization['ogrn'], main_company=None).pk  # Ссылка на главную компанию
+                try:
+                    wrapt_subdivision['main_company'] = OrganizationEgrul.objects.get(
+                        ogrn=wrapt_organization['ogrn'], main_company=None).pk  # Ссылка на главную компанию
+                except ObjectDoesNotExist:
+                    log_in_file(
+                        'Ошибка! Не удалось привязать филиал к основной компании. ogrn {}; inn {}; kpp{}'.format(
+                            wrapt_subdivision['ogrn'], wrapt_subdivision['inn'], wrapt_subdivision['kpp']), 'error')
                 save_in_base(wrapt_subdivision, wrapt_subdivision['kpp'])
             # array_of_organizations.append(wrapt_subdivision)
 

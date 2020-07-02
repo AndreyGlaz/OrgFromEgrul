@@ -5,6 +5,18 @@ from datetime import date, timedelta
 import zipfile
 import tempfile
 import urllib3
+import logging
+
+logging.basicConfig(format='%(asctime)d-%(levelname)s:%(message)s', level=logging.INFO,
+                    filename='/home/admin/egrul_base_log/parsing_egrul.log')
+
+
+def log_in_file(string, level):
+    if level == 'info':
+        logging.info(string)
+    elif level == 'error':
+        logging.error(string)
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -26,9 +38,7 @@ def open_zip(data_zip):
     file = tempfile.TemporaryFile()
     file.write(data_zip)
     file_zip = zipfile.ZipFile(file)
-    print(file_zip)
     for file_name in file_zip.namelist():
-        print(file_name, file_zip.getinfo(file_name))
         file_parser(file_zip.read(file_name).decode('windows-1251'))
 
 
@@ -36,9 +46,11 @@ def open_zip(data_zip):
 def check_file(file_path):
     file_count = 1
     miss = 0
+
     while miss < 3:
         response_zip = requests.get(file_path + '_' + str(file_count) + '.zip', verify=False, cert=cert_dir)
         if response_zip.headers['Content-Type'] == 'application/download':
+            log_in_file(file_path, 'info')
             open_zip(response_zip.content)
         else:
             miss += 1
