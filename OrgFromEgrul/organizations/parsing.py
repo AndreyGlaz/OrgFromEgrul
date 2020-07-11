@@ -3,9 +3,11 @@ import re
 
 from django.core.exceptions import ObjectDoesNotExist
 
-from OrgFromEgrul.organizations.getting_data import log_in_file
 from OrgFromEgrul.organizations.models import OrganizationEgrul
 from OrgFromEgrul.organizations.serializers import OrganizationEgrulCreateOrUpdateSerializer
+import logging
+
+logging.basicConfig(filename='parsing_egrul.log', format='%(asctime)s-%(levelname)s:%(message)s', level=logging.INFO)
 
 # Словарь для хранения пути к тем элементам организации,
 # которые можно прото передать item_validation без дополнительных фиксов
@@ -83,13 +85,6 @@ def name_subdivision_validation(element, wrapt_subdivision, name_main_organizati
         return delimiter.join([type_subdivision, name_main_organization, address_generation(wrapt_subdivision)])
 
 
-# Функция для подстановки id соответствующей записи из словаря вместо значения. Для связки таблиц.
-# def finding_from_dict(value, model):
-#     if value and len(value.replace(' ', '')) == 5 and model.objects.filter(code=value.replace(' ', '')).exists():
-#         return model.objects.get(code=value.replace(' ', '')).pk
-#     else:
-#         return None
-
 # Функция для проверки на количество символов в выгрузке (может попадаться 2. Например "49".
 def okopf_validate(value):
     if value and len(value.replace(' ', '')) == 5:
@@ -122,9 +117,7 @@ def save_in_base(wrapt_org, kpp_subdivision=''):
 
 def file_parser(file_xml):
     parser = ET.XMLParser(encoding="windows-1251")
-    root = ET.XML(file_xml, parser=parser)
-
-    # array_of_organizations = list()
+    root = ET.parse(file_xml, parser=parser)
 
     for child in root.iter('СвЮЛ'):
         wrapt_organization = dict()
@@ -143,14 +136,13 @@ def file_parser(file_xml):
         wrapt_organization['okopf'] = okopf_validate(wrapt_organization['okopf'])
         wrapt_organization['main_company'] = None
         save_in_base(wrapt_organization)
-        # array_of_organizations.append(wrapt_organization)
 
         if child.find('СвПодразд'):
             for subdivision in child.find('СвПодразд'):
                 wrapt_subdivision = dict()
 
                 for key, value in location_of_subdiv_elements.items():
-                    wrapt_subdivision[key] = item_validation(child, value['path'], value['element'])
+                    wrapt_subdivision[key] = item_validation(subdivision, value['path'], value['element'])
 
                 wrapt_subdivision['inn'] = wrapt_organization[
                     'inn']  # ИНН у филиала/представительства такой же как и у основной организации
@@ -168,14 +160,7 @@ def file_parser(file_xml):
                     wrapt_subdivision['main_company'] = OrganizationEgrul.objects.get(
                         ogrn=wrapt_organization['ogrn'], main_company=None).pk  # Ссылка на главную компанию
                 except ObjectDoesNotExist:
-                    log_in_file(
+                    logging.error(
                         'Ошибка! Не удалось привязать филиал к основной компании. ogrn {}; inn {}; kpp{}'.format(
-                            wrapt_subdivision['ogrn'], wrapt_subdivision['inn'], wrapt_subdivision['kpp']), 'error')
+                            wrapt_subdivision['ogrn'], wrapt_subdivision['inn'], wrapt_subdivision['kpp']))
                 save_in_base(wrapt_subdivision, wrapt_subdivision['kpp'])
-            # array_of_organizations.append(wrapt_subdivision)
-
-# def parsing_egrul(file_zip):
-#     # list_of_all_organization_ogrn = OrganizationEgrul.objects.values_list('ogrn', flat=True)
-#     for file_name in file_zip.namelist():
-#         file_parser(file_zip.read(file_name).decode('utf-8'))
-#     print('Success!')

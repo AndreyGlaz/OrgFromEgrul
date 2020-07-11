@@ -1,28 +1,24 @@
 import os
+from time import sleep
+
+import celery
 import requests
-from OrgFromEgrul.organizations.parsing import file_parser
+
+from OrgFromEgrul.organizations.models import SuccessfullyProcessedZip
 from datetime import date, timedelta
 import zipfile
 import tempfile
 import urllib3
 import logging
 
-logging.basicConfig(format='%(asctime)d-%(levelname)s:%(message)s', level=logging.INFO,
-                    filename='/home/admin/egrul_base_log/parsing_egrul.log')
-
-
-def log_in_file(string, level):
-    if level == 'info':
-        logging.info(string)
-    elif level == 'error':
-        logging.error(string)
-
+logging.basicConfig(filename='parsing_egrul.log', format='%(asctime)s-%(levelname)s:%(message)s', level=logging.INFO)
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 parent_dir = os.path.dirname(os.path.abspath(os.curdir))
 egrul_dir = 'https://ftp.egrul.nalog.ru/EGRUL/'
 cert_dir = os.path.join(parent_dir, 'OrgFromEgrul', 'cert-key.pem')
+list_processed_zip = SuccessfullyProcessedZip.objects.values_list('url_zip', flat=True)
 
 
 # Добавляет ноль в начало значнеия
@@ -33,27 +29,48 @@ def zero_plus(value):
         return str(value)
 
 
-# Открытие Zip архива и передача в парсинг
-def open_zip(data_zip):
+# Удаляет папку и все файлы в ней
+def delete_folder(path):
+    for file_name in os.listdir(path):
+        os.remove(path + file_name)
+    os.rmdir(path)
+
+
+# Открытие Zip архива и сохранение в папку
+def open_and_unpacking_zip(data_zip, path):
     file = tempfile.TemporaryFile()
     file.write(data_zip)
     file_zip = zipfile.ZipFile(file)
-    for file_name in file_zip.namelist():
-        file_parser(file_zip.read(file_name).decode('windows-1251'))
+    file_zip.extractall(path[27:])
+    from OrgFromEgrul.tasks import parsing_and_save
+    tasks = celery.group(
+        [parsing_and_save.s(xml_file=str(path[27:] + file_name)) for file_name in
+         os.listdir(path[27:])])
+    group_task = tasks.apply_async()
+    while not group_task.ready():
+        sleep(0.5)
+    logging.info('Success parsing zip! ' + path[27:])
+    processed = SuccessfullyProcessedZip(url_zip=path[27:-1] + '.zip')
+    processed.save()
+    delete_folder(path[27:])
+    file.close()
+    file_zip.close()
 
 
 # Проверка содержимого папки и отправка на открытие
 def check_file(file_path):
     file_count = 1
     miss = 0
-
     while miss < 3:
-        response_zip = requests.get(file_path + '_' + str(file_count) + '.zip', verify=False, cert=cert_dir)
-        if response_zip.headers['Content-Type'] == 'application/download':
-            log_in_file(file_path, 'info')
-            open_zip(response_zip.content)
-        else:
-            miss += 1
+        zip_path = file_path + '_' + str(file_count) + '.zip'
+        if zip_path[27:] not in list_processed_zip:
+            response_zip = requests.get(zip_path, verify=False, cert=cert_dir)
+            if response_zip.headers['Content-Type'] == 'application/download':
+                logging.info(zip_path)
+                print(zip_path)
+                open_and_unpacking_zip(response_zip.content, file_path + '_' + str(file_count) + '/')
+            else:
+                miss += 1
         file_count += 1
 
 
@@ -73,6 +90,7 @@ def select_folder():
         for number_month in range(1, 13):
             for number_date in range(1, 32):
                 forming_and_use_date(number_date, number_month, number_year)
+    # logfile.close()
 
 
 # Функция для запуска её каждую ночь, накатывает изменения за прошедшую неделю

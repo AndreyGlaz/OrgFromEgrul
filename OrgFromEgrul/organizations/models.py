@@ -8,8 +8,8 @@ class OrganizationEgrul(models.Model):
     name = models.CharField('Наименование', max_length=1000, blank=True, null=True)
     short_name = models.CharField('Краткое наименование', max_length=1000, blank=True, null=True)
     inn = models.CharField('ИНН', max_length=255, blank=True)
-    kpp = models.CharField('КПП', max_length=255, blank=True, null=True)
-    ogrn = models.CharField('ОГРН', max_length=255, blank=True)
+    kpp = models.CharField('КПП', max_length=255, blank=True, null=True, db_index=True)
+    ogrn = models.CharField('ОГРН', max_length=255, blank=True, db_index=True)
     okpo = models.CharField('ОКПО', max_length=255, blank=True, null=True)
     okato = models.CharField('ОКАТО', max_length=255, blank=True, null=True)
     index = models.CharField('Почтовый индекс', max_length=255, blank=True, null=True)
@@ -35,3 +35,15 @@ class OrganizationEgrul(models.Model):
     class Meta:
         verbose_name = 'Организация из егрюл'
         verbose_name_plural = 'Организация из егрюл'
+
+
+class SuccessfullyProcessedZip(models.Model):
+    """
+    Словарь для хранения уже обработанных zip
+    """
+    url_zip = models.CharField('Ссылка на zip файл', max_length=400, blank=True, null=True)
+    date = models.DateField('Дата обработки zip', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Обработанный zip'
+        verbose_name_plural = 'Обработанные zip'

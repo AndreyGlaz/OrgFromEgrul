@@ -4,17 +4,19 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+flower = "*"
 
 [packages]
 django = "*"
 djangorestframework = "*"
-celery = "*"
+celery = {extras = ["redis"],version = "*"}
 redis = "*"
 pytz = "*"
 psycopg2-binary = "*"
 urllib3 = "*"
 requests = "*"
 gunicorn = "*"
+kombu = "*"
 
 [requires]
 python_version = "3.7"
