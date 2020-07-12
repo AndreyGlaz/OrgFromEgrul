@@ -137,5 +137,7 @@ gen
 OrgFromEgrul/__pycache__/
 OrgFromEgrul/organizations/__pycache__/
 Pipfile.lock
-new_folder.zip
 templates/
+EGRUL/
+OrgFromEgrul/organizations/migrations
+cert-key.pem

@@ -18,8 +18,7 @@ app.conf.update(
     beat_schedule={
         'update_data': {
             'task': 'OrgFromEgrul.tasks.start_update',
-            # 'schedule': 100.0,
-            'schedule': crontab(minute=24, hour=11),
+            'schedule': crontab(minute=0, hour=3),
         }
     }
 )

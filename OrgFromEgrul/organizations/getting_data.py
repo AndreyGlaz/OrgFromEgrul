@@ -90,7 +90,6 @@ def select_folder():
         for number_month in range(1, 13):
             for number_date in range(1, 32):
                 forming_and_use_date(number_date, number_month, number_year)
-    # logfile.close()
 
 
 # Функция для запуска её каждую ночь, накатывает изменения за прошедшую неделю
