@@ -27,6 +27,7 @@ class OrganizationEgrul(models.Model):
     okfs = models.CharField('ОКФС', max_length=255, blank=True, null=True)
     region = models.CharField('Регион', max_length=255, blank=True, null=True)
     okogu = models.CharField('ОКОГУ', max_length=255, blank=True, null=True)
+    liquidation_date = models.CharField('Дата ликвидации', max_length=100, blank=True, null=True)
 
     main_company = models.ForeignKey('self', verbose_name='Основная компания',
                                      on_delete=models.CASCADE, null=True, blank=True)

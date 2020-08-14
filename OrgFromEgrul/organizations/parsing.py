@@ -25,7 +25,8 @@ location_of_org_elements = {
     'supervisor_patronymic': {'path': './СведДолжнФЛ//СвФЛ', 'element': 'Отчество'},
     'supervisor_post': {'path': './СведДолжнФЛ//СвДолжн', 'element': 'НаимДолжн'},
     'okopf': {'path': '.', 'element': 'КодОПФ'},
-    # 'region': {'path': './СвАдресЮЛ//АдресРФ', 'element': 'КодРегион'}
+    'liquidation_date': {'path': 'СвПрекрЮЛ', 'element': 'ДатаПрекрЮЛ'},
+    'region': {'path': './СвАдресЮЛ//АдресРФ', 'element': 'КодРегион'},
 }
 
 # Словарь для хранения пути к тем элементам филиала/подразделения,
@@ -34,7 +35,7 @@ location_of_subdiv_elements = {
     'index': {'path': 'АдрМНРФ', 'element': 'Индекс'},
     'street': {'path': './АдрМНРФ//Улица', 'element': 'НаимУлица'},
     'building': {'path': 'АдрМНРФ', 'element': 'Корпус'},
-    # 'region': {'path': 'АдрМНРФ', 'element': 'КодРегион'}
+    'region': {'path': 'АдрМНРФ', 'element': 'КодРегион'},
 }
 
 
