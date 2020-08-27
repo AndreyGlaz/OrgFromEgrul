@@ -11,7 +11,8 @@ import tempfile
 import urllib3
 import logging
 
-logging.basicConfig(filename='parsing_egrul.log', format='%(asctime)s-%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(filename='parsing_egrul_{}.log'.format(str(date.today())),
+                    format='%(asctime)s-%(levelname)s:%(message)s', level=logging.INFO)
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -40,21 +41,24 @@ def delete_folder(path):
 def open_and_unpacking_zip(data_zip, path):
     file = tempfile.TemporaryFile()
     file.write(data_zip)
-    file_zip = zipfile.ZipFile(file)
-    file_zip.extractall(path[27:])
-    from OrgFromEgrul.tasks import parsing_and_save
-    tasks = celery.group(
-        [parsing_and_save.s(xml_file=str(path[27:] + file_name)) for file_name in
-         os.listdir(path[27:])])
-    group_task = tasks.apply_async()
-    while not group_task.ready():
-        sleep(0.5)
-    logging.info('Success parsing zip! ' + path[27:])
-    processed = SuccessfullyProcessedZip(url_zip=path[27:-1] + '.zip')
-    processed.save()
-    delete_folder(path[27:])
+    if zipfile.is_zipfile(file):
+        file_zip = zipfile.ZipFile(file)
+        file_zip.extractall(path[27:])
+        from OrgFromEgrul.tasks import parsing_and_save
+        tasks = celery.group(
+            [parsing_and_save.s(xml_file=str(path[27:] + file_name)) for file_name in
+             os.listdir(path[27:])])
+        group_task = tasks.apply_async()
+        while not group_task.ready():
+            sleep(0.5)
+        logging.info('Success parsing zip! ' + path[27:])
+        processed = SuccessfullyProcessedZip(url_zip=path[27:-1] + '.zip')
+        processed.save()
+        delete_folder(path[27:])
+        file_zip.close()
+    else:
+        logging.error('Error when download zip file. ' + path[27:])
     file.close()
-    file_zip.close()
 
 
 # Проверка содержимого папки и отправка на открытие
