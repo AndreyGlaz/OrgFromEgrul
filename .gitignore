@@ -140,4 +140,4 @@ Pipfile.lock
 templates/
 EGRUL/
 OrgFromEgrul/organizations/migrations
-cert-key.pem
+EGRUL-cert-key.pem

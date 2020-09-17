@@ -1,6 +1,24 @@
 from django.db import models
 
 
+class OrganizationEgrip(models.Model):
+    """
+    Абстрактная модель для ИП
+    """
+    ogrn = models.CharField('ОГРН', max_length=255, blank=True, db_index=True)
+    inn = models.CharField('ИНН', max_length=255, blank=True)
+    first_name = models.CharField('Имя', max_length=255, blank=True, null=True)
+    second_name = models.CharField('Фамилия', max_length=255, blank=True, null=True)
+    patronymic = models.CharField('Отчество', max_length=255, blank=True, null=True)
+    locality = models.CharField('Населённый пункт', max_length=255, null=True, blank=True)
+    region = models.CharField('Регион', max_length=255, blank=True, null=True)
+    liquidation_date = models.CharField('Дата ликвидации', max_length=100, blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Организация из егрип'
+        verbose_name_plural = 'Организации из егрип'
+
+
 class OrganizationEgrul(models.Model):
     """
     Абстрактная модель для организации (OrganizationEgrul; OrganizationHistory)
